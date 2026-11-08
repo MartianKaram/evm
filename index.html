@@ -216,6 +216,10 @@ body.wb-open #shell{padding-right:var(--wb-w)}
 .wb-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
 .wb-board[data-tool="eraser"] .wb-canvas,.wb-board[data-tool="laser"] .wb-canvas{cursor:none}
 .wb-board[data-tool="move"] .wb-canvas{cursor:grab}
+.wb-board[data-tool="text"] .wb-canvas{cursor:text}
+.wb-ta{position:absolute;z-index:5;margin:0;padding:0;border:0;outline:1.5px dashed var(--accent);outline-offset:4px;background:transparent;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;font-weight:600;resize:none;overflow:hidden;white-space:pre;caret-color:var(--accent)}
+.wb-selbar[hidden]{display:none}
+.wb-selbar{position:absolute;left:10px;bottom:10px;z-index:4;display:flex;align-items:center;gap:10px;padding:5px 6px 5px 14px;font-size:.8rem;font-weight:600;color:var(--text);background:var(--surface);border:2px solid var(--dp-color-ornament-line);border-radius:999px;box-shadow:var(--shadow)}
 .wb-board.grabbing .wb-canvas{cursor:grabbing}
 .wb-hint{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);margin:0;padding:0 24px;font-size:var(--dp-typography-metadata);color:var(--muted);text-align:center;pointer-events:none}
 .wb-board:not(.empty) .wb-hint{display:none}
@@ -354,12 +358,14 @@ body.wb-full #shell{padding-right:0}
     <button class="wb-tool" type="button" data-tool="eraser" aria-pressed="false" title="Eraser, removes whole strokes (E)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg><span>Eraser</span></button>
     <button class="wb-tool" type="button" data-tool="laser" aria-pressed="false" title="Laser pointer, fades away (L)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg><span>Laser</span></button>
     <button class="wb-tool" type="button" data-tool="move" aria-pressed="false" title="Move the board (M)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 9-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg><span>Move</span></button>
+    <button class="wb-tool" type="button" data-tool="lasso" aria-pressed="false" title="Lasso: circle strokes to select them, then drag to move, recolour or delete (S)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="3 2.6" d="M7 3.5C4 4.5 3 8 5 11c2 3 7 4 11 2.5 3-1.2 4-4 2.5-6.5C17 4 11 2.5 7 3.5Z"/><path d="M8 15c-1 1.5-.5 3.5 1.5 4.2"/></svg><span>Lasso</span></button>
+    <button class="wb-tool" type="button" data-tool="text" aria-pressed="false" title="Text box: click the board and type (T)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg><span>Text</span></button>
     <button class="wb-tool wb-undo" id="wbUndo" type="button" disabled aria-label="Undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span>Undo</span></button>
   </div>
   <div class="wb-opts">
     <div class="wb-colors" id="wbColors" role="group" aria-label="Colour"></div>
     <button class="wb-tool wb-bg" id="wbBg" type="button" aria-pressed="false" title="Switch the board between dotted and solid"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg><span id="wbBgLab">Seamless</span></button>
-    <div class="wb-sizelab"><label for="wbSize">Thickness</label><input id="wbSize" type="range" min="1" max="24" step="1" value="3"><input id="wbNum" class="wb-num" type="number" min="1" max="24" step="1" value="3" inputmode="numeric" aria-label="Thickness in pixels"><span class="wb-unit">px</span></div>
+    <div class="wb-sizelab"><label for="wbSize" id="wbSizeLab">Thickness</label><input id="wbSize" type="range" min="1" max="24" step="1" value="3"><input id="wbNum" class="wb-num" type="number" min="1" max="24" step="1" value="3" inputmode="numeric" aria-label="Thickness in pixels"><span class="wb-unit">px</span></div>
     <button class="wb-tool wb-snap" id="wbSnap" type="button" aria-pressed="true" aria-label="Snap shapes" title="Draw a circle, square or hexagon and hold still to snap it into a clean shape"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9z"/></svg><span>Snap shapes</span></button>
   </div>
   <div class="wb-body">
@@ -367,6 +373,7 @@ body.wb-full #shell{padding-right:0}
       <canvas class="wb-canvas" id="wbCanvas" role="img" aria-label="Whiteboard drawing area for this page"></canvas>
       <p class="wb-hint">Draw anything for this page. Your drawing is saved in this browser.</p>
       <div class="wb-toast" id="wbToast" role="status"></div>
+      <div class="wb-selbar" id="wbSel" hidden><span id="wbSelN">0 selected</span><button class="mini danger" id="wbSelDel" type="button">Delete</button></div>
       <div class="wb-zoom" role="group" aria-label="Zoom">
         <button type="button" id="wbZoomOut" aria-label="Zoom out" title="Zoom out (-)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
         <button type="button" class="pct" id="wbPct" title="Reset zoom to 100%">100%</button>
@@ -16597,8 +16604,9 @@ function sizeTopbar(){document.documentElement.style.setProperty('--hdr',topbar.
 /* whiteboard tools. Strokes live in board coordinates (zoom and pan only change the view) and are saved per page in this browser. */
 const WB_COLORS=[['ink','Ink'],['#d64533','Red'],['#e0902a','Orange'],['#3f8f5a','Green'],['#3a78c9','Blue'],['#8a5bbf','Purple']];
 const WB_MIN=.25,WB_MAX=4,WB_LASER_MS=900;
+const TEXT_FONT='"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif';
 const cv=document.getElementById('wbCanvas'),cx=cv.getContext('2d'),wbSize=document.getElementById('wbSize'),wbPct=document.getElementById('wbPct');
-const WB={tool:'pen',color:'ink',w:{pen:3,hl:18,eraser:24},strokes:[],cur:null,laser:[],hover:null,ptrs:new Map(),gest:null,mode:null,pan:null,view:{s:1,x:0,y:0},views:{},key:null,dirty:false,raf:0,dpr:1,hist:{},snap:true,timer:0,anchor:null,prev:null,changed:false,snapped:false};
+const WB={tool:'pen',color:'ink',w:{pen:3,hl:18,eraser:24,text:28},sel:[],lassoPath:null,moveD:null,moveStart:null,edit:null,shape:null,strokes:[],cur:null,laser:[],hover:null,ptrs:new Map(),gest:null,mode:null,pan:null,view:{s:1,x:0,y:0},views:{},key:null,dirty:false,raf:0,dpr:1,hist:{},snap:true,timer:0,anchor:null,prev:null,changed:false,snapped:false};
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const storeKey=k=>'emwb:'+k;
 function toWorld(sx,sy){const v=WB.view;return [(sx-v.x)/v.s,(sy-v.y)/v.s];}
@@ -16608,7 +16616,22 @@ function schedule(){
   if(WB.raf)return;
   WB.raf=requestAnimationFrame(()=>{WB.raf=0;draw();if(WB.laser.length)schedule();});
 }
+/* text boxes are stored like strokes: p holds the four corners of the box, tx the text, fs the font size */
+function textFont(fs){return '600 '+fs+'px '+TEXT_FONT;}
+function textPath(s,ink,g){
+  g.font=textFont(s.fs);g.textBaseline='top';g.fillStyle=s.c==='ink'?ink:s.c;
+  s.tx.split('\n').forEach((ln,i)=>g.fillText(ln,s.p[0],s.p[1]+i*s.fs*1.3+s.fs*.15));
+}
+function textBox(x,y,txt,fs){
+  cx.save();cx.font=textFont(fs);
+  const lines=txt.split('\n');let w=1;
+  lines.forEach(l=>{w=Math.max(w,cx.measureText(l).width);});
+  cx.restore();
+  const h=lines.length*fs*1.3;
+  return [x,y,x+w,y,x+w,y+h,x,y+h];
+}
 function strokePath(s,ink,g,minW){
+  if(s.tx!==undefined){textPath(s,ink,g);return;}
   const p=s.p,col=s.c==='ink'?ink:s.c,w=Math.max(s.w,minW||0);
   g.strokeStyle=col;g.fillStyle=col;g.lineWidth=w;
   if(p.length<4){g.beginPath();g.arc(p[0],p[1],w/2,0,Math.PI*2);g.fill();return;}
@@ -16626,7 +16649,10 @@ function draw(){
   const d=WB.dpr,v=WB.view,ink=getComputedStyle(root).getPropertyValue('--text').trim()||'#1e382c';
   cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);
   cx.setTransform(d*v.s,0,0,d*v.s,d*v.x,d*v.y);cx.lineCap='round';cx.lineJoin='round';
-  drawStrokes(cx,WB.cur?WB.strokes.concat([WB.cur]):WB.strokes,ink,0);
+  let list=WB.cur?WB.strokes.concat([WB.cur]):WB.strokes;
+  if(WB.edit&&WB.edit.item)list=list.filter(s=>s!==WB.edit.item);
+  if(WB.moveD&&WB.sel.length){const set=new Set(WB.sel);list=list.map(s=>set.has(s)?shifted(s,WB.moveD.dx,WB.moveD.dy):s);}
+  drawStrokes(cx,list,ink,0);
   cx.setTransform(d,0,0,d,0,0);
   const now=performance.now();WB.laser=WB.laser.filter(q=>now-q.t<WB_LASER_MS);
   for(let i=1;i<WB.laser.length;i++){
@@ -16636,6 +16662,17 @@ function draw(){
     cx.shadowBlur=0;cx.lineWidth=2;cx.strokeStyle='#ffffff';cx.stroke();
   }
   cx.globalAlpha=1;cx.shadowBlur=0;
+  if(WB.sel.length||WB.lassoPath){
+    const acc=getComputedStyle(root).getPropertyValue('--accent').trim()||'#895440';
+    cx.setLineDash([6,4]);cx.lineWidth=1.8;cx.strokeStyle=acc;
+    const sb=selBox();
+    if(sb){const pd=8;cx.strokeRect(sb.x0*v.s+v.x-pd,sb.y0*v.s+v.y-pd,(sb.x1-sb.x0)*v.s+2*pd,(sb.y1-sb.y0)*v.s+2*pd);}
+    if(WB.lassoPath&&WB.lassoPath.length>1){
+      cx.beginPath();WB.lassoPath.forEach((q,i)=>{if(i)cx.lineTo(q[0],q[1]);else cx.moveTo(q[0],q[1]);});
+      cx.stroke();cx.globalAlpha=.08;cx.fillStyle=acc;cx.fill();cx.globalAlpha=1;
+    }
+    cx.setLineDash([]);
+  }
   const h=WB.hover;
   if(h&&WB.tool==='laser'){cx.fillStyle='#ff3b30';cx.shadowColor='#ff3b30';cx.shadowBlur=14;cx.beginPath();cx.arc(h.x,h.y,6,0,Math.PI*2);cx.fill();cx.shadowBlur=0;}
   if(h&&WB.tool==='eraser'){cx.strokeStyle=ink;cx.lineWidth=1.5;cx.beginPath();cx.arc(h.x,h.y,WB.w.eraser/2,0,Math.PI*2);cx.stroke();}
@@ -16651,7 +16688,9 @@ function viewChanged(){
   wbBoard.style.backgroundSize=(24*v.s)+'px '+(24*v.s)+'px';
   wbBoard.style.backgroundPosition=v.x+'px '+v.y+'px';
   wbPct.textContent=Math.round(v.s*100)+'%';
-  WB.views[WB.key]=v;schedule();
+  WB.views[WB.key]=v;
+  if(WB.edit)styleEdit();
+  schedule();
 }
 function zoomAt(sx,sy,f){
   const v=WB.view,s=clamp(v.s*f,WB_MIN,WB_MAX),k=s/v.s;
@@ -16663,7 +16702,7 @@ function saveBoard(){
   WB.dirty=false;
   try{
     if(!WB.strokes.length){localStorage.removeItem(storeKey(WB.key));return;}
-    localStorage.setItem(storeKey(WB.key),JSON.stringify({t:wbPage.textContent,u:Date.now(),s:WB.strokes.map(s=>{const o={c:s.c,w:s.w,p:s.p.map(n=>Math.round(n*10)/10)};if(s.h)o.h=1;if(s.k)o.k=1;return o;})}));
+    localStorage.setItem(storeKey(WB.key),JSON.stringify({t:wbPage.textContent,u:Date.now(),s:WB.strokes.map(s=>{const o={c:s.c,w:s.w,p:s.p.map(n=>Math.round(n*10)/10)};if(s.h)o.h=1;if(s.k)o.k=1;if(s.tx!==undefined){o.tx=s.tx;o.fs=s.fs;}return o;})}));
   }catch(e){}
   if(document.getElementById('wbGallery'))buildGallery();
 }
@@ -16686,6 +16725,7 @@ function viewShows(v,list,W,H){
   return list.some(s=>{for(let i=0;i<s.p.length;i+=2){if(s.p[i]>=x0&&s.p[i]<=x1&&s.p[i+1]>=y0&&s.p[i+1]<=y1)return true;}return false;});
 }
 function openBoard(k){
+  finishEdit();WB.sel=[];WB.lassoPath=null;WB.moveD=null;selUI();
   WB.cur=null;WB.laser=[];WB.ptrs.clear();WB.gest=null;WB.mode=null;WB.pan=null;wbBoard.classList.remove('grabbing');
   WB.key=k;WB.strokes=loadBoard(k);
   const r=cv.getBoundingClientRect(),W=r.width||360,H=r.height||480,kept=WB.views[k];
@@ -16696,6 +16736,7 @@ function openBoard(k){
 
 function hit(s,x,y,r){
   const p=s.p;
+  if(s.tx!==undefined)return x>=p[0]-r&&x<=p[2]+r&&y>=p[1]-r&&y<=p[5]+r;
   if(p.length<4)return Math.hypot(p[0]-x,p[1]-y)<=r;
   for(let i=0;i<p.length-2;i+=2){
     const ax=p[i],ay=p[i+1],dx=p[i+2]-ax,dy=p[i+3]-ay,l=dx*dx+dy*dy;
@@ -16718,7 +16759,7 @@ function updateUndo(){wbUndo.disabled=!histOf().length;}
 function undo(){
   const h=histOf();
   if(!h.length||WB.ptrs.size)return;
-  WB.strokes=h.pop();updateUndo();saveBoard();schedule();
+  WB.strokes=h.pop();WB.sel=[];selUI();updateUndo();saveBoard();schedule();
 }
 wbUndo.onclick=undo;
 let toastT=0;
@@ -16857,6 +16898,32 @@ function rotatePoints(base,out,cx,cy,d){
     out[i]=cx+dx*co-dy*si;out[i+1]=cy+dx*si+dy*co;
   }
 }
+/* straight line: a nearly straight open stroke becomes a line from where it started to where it ended */
+function lineRecognize(p,scale){
+  const n=p.length/2;if(n<3)return null;
+  const x0=p[0],y0=p[1],x1=p[p.length-2],y1=p[p.length-1],L=Math.hypot(x1-x0,y1-y0);
+  if(L*scale<40)return null;
+  let dev=0,far=0,back=0;
+  for(let i=0;i<n;i++){
+    dev=Math.max(dev,Math.abs((x1-x0)*(y0-p[2*i+1])-(x0-p[2*i])*(y1-y0))/L);
+    const t=((p[2*i]-x0)*(x1-x0)+(p[2*i+1]-y0)*(y1-y0))/L;
+    far=Math.max(far,t);back=Math.max(back,far-t);
+  }
+  /* straight enough, and always moving forward (a scribble that doubles back is not a line) */
+  if(dev>0.06*L+2/scale||back>0.08*L+2/scale||far>1.12*L)return null;
+  const deg=((Math.round(Math.atan2(y1-y0,x1-x0)*180/Math.PI)%180)+180)%180;
+  return {type:'Line',x0:x0,y0:y0,x1:x1,y1:y1,deg:deg};
+}
+/* after a line snaps, keep holding and drag: the far end follows the pointer, with soft stops every 15 degrees */
+function lineAdjust(S,x,y){
+  let dx=x-S.x0,dy=y-S.y0;const L=Math.hypot(dx,dy);
+  if(L*WB.view.s<20)return;
+  let deg=Math.atan2(dy,dx)*180/Math.PI;
+  const near=Math.round(deg/15)*15;
+  if(Math.abs(deg-near)<3){deg=near;const a=deg*Math.PI/180;dx=L*Math.cos(a);dy=L*Math.sin(a);}
+  WB.cur.p=[S.x0,S.y0,S.x0+dx,S.y0+dy];
+  toast('Line · '+(((Math.round(deg)%180)+180)%180)+'°');
+}
 /* draw a loop and hold still: after a short pause it becomes the clean shape, and dragging around its centre tilts it */
 const HOLD_MS=600,HOLD_SLOP=6;
 function armHold(sx,sy){
@@ -16867,7 +16934,15 @@ function snapNow(){
   const c=WB.cur;
   if(!c||WB.snapped||(WB.mode!=='pen'&&WB.mode!=='hl'))return;
   const r=shRecognize(c.p);
-  if(!r)return;
+  if(!r){
+    const ln=lineRecognize(c.p,WB.view.s);
+    if(!ln)return;
+    c.p=[ln.x0,ln.y0,ln.x1,ln.y1];delete c.k;
+    WB.snapped=true;WB.shape={line:true,type:'Line',x0:ln.x0,y0:ln.y0};
+    toast('Line · '+ln.deg+'° · keep holding and drag to adjust');
+    try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
+    schedule();return;
+  }
   c.p=r.pts;if(r.smooth)delete c.k;else c.k=1;
   WB.snapped=true;
   if(r.smooth){WB.shape=null;toast(r.type);}
@@ -16881,9 +16956,13 @@ function snapNow(){
 }
 
 function setTool(t){
+  if(t!=='text')finishEdit();
+  if(t!=='lasso'&&WB.sel.length){WB.sel=[];selUI();}
   WB.tool=t;wbBoard.dataset.tool=t;
   document.querySelectorAll('.wb-tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===t)));
-  const r={pen:[1,24],hl:[6,48],eraser:[8,60]}[t];
+  wbSizeLab.textContent=t==='text'?'Font size':'Thickness';
+  wbNum.setAttribute('aria-label',t==='text'?'Font size in pixels':'Thickness in pixels');
+  const r={pen:[1,24],hl:[6,48],eraser:[8,60],text:[12,96]}[t];
   if(r){wbSize.min=wbNum.min=r[0];wbSize.max=wbNum.max=r[1];wbSize.value=wbNum.value=WB.w[t];}
   wbSize.disabled=wbNum.disabled=!r;
   schedule();
@@ -16891,11 +16970,14 @@ function setTool(t){
 function setColor(c){
   WB.color=c;
   document.querySelectorAll('.wb-sw').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.c===c)));
-  if(WB.tool!=='pen'&&WB.tool!=='hl')setTool('pen');
+  if(WB.edit){WB.edit.c=c;styleEdit();return;}
+  if(WB.tool==='lasso'){recolorSel(c);return;}
+  if(WB.tool!=='pen'&&WB.tool!=='hl'&&WB.tool!=='text')setTool('pen');
 }
 WB_COLORS.forEach(([c,n])=>{
   const b=document.createElement('button');b.type='button';b.className='wb-sw';b.dataset.c=c;
   b.style.setProperty('--c',c==='ink'?'var(--text)':c);b.setAttribute('aria-label',n);b.title=n;b.setAttribute('aria-pressed',String(c===WB.color));
+  b.addEventListener('mousedown',e=>{if(WB.edit)e.preventDefault();});
   b.onclick=()=>setColor(c);document.getElementById('wbColors').appendChild(b);
 });
 document.querySelectorAll('.wb-tool[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
@@ -16918,9 +17000,105 @@ document.getElementById('wbZoomIn').onclick=()=>zoomCentre(1.25);
 document.getElementById('wbZoomOut').onclick=()=>zoomCentre(.8);
 wbPct.onclick=()=>{WB.view={s:1,x:0,y:0};viewChanged();};
 
+/* lasso: loop around strokes to select them, then drag to move, recolour with the swatches, or delete. Every step can be undone. */
+const wbSel=document.getElementById('wbSel'),wbSelN=document.getElementById('wbSelN'),wbSelDel=document.getElementById('wbSelDel'),wbSizeLab=document.getElementById('wbSizeLab');
+function selUI(){wbSel.hidden=!WB.sel.length;wbSelN.textContent=WB.sel.length+' selected';}
+function shifted(s,dx,dy){const o=Object.assign({},s);o.p=s.p.map((v,i)=>v+(i%2?dy:dx));return o;}
+function polyHas(poly,x,y){
+  let c=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const a=poly[i],b=poly[j];
+    if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;
+  }
+  return c;
+}
+function selBox(){
+  if(!WB.sel.length)return null;
+  const m=WB.moveD||{dx:0,dy:0};let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  WB.sel.forEach(s=>{for(let i=0;i<s.p.length;i+=2){x0=Math.min(x0,s.p[i]-s.w/2);x1=Math.max(x1,s.p[i]+s.w/2);y0=Math.min(y0,s.p[i+1]-s.w/2);y1=Math.max(y1,s.p[i+1]+s.w/2);}});
+  return {x0:x0+m.dx,y0:y0+m.dy,x1:x1+m.dx,y1:y1+m.dy};
+}
+function inSelBox(x,y){const b=selBox();if(!b)return false;const pd=10/WB.view.s;return x>=b.x0-pd&&x<=b.x1+pd&&y>=b.y0-pd&&y<=b.y1+pd;}
+function lassoEnd(){
+  const path=WB.lassoPath;let a=1e9,b=1e9,c=-1e9,d=-1e9;
+  path.forEach(q=>{a=Math.min(a,q[0]);c=Math.max(c,q[0]);b=Math.min(b,q[1]);d=Math.max(d,q[1]);});
+  if(Math.max(c-a,d-b)<10){
+    const [x,y]=toWorld(path[0][0],path[0][1]),r=10/WB.view.s;let f=null;
+    for(let i=WB.strokes.length-1;i>=0&&!f;i--){if(hit(WB.strokes[i],x,y,r+WB.strokes[i].w/2))f=WB.strokes[i];}
+    WB.sel=f?[f]:[];
+  }else{
+    const poly=path.map(q=>toWorld(q[0],q[1]));
+    WB.sel=WB.strokes.filter(s=>{let k=0;for(let i=0;i<s.p.length;i+=2)if(polyHas(poly,s.p[i],s.p[i+1]))k++;return k/(s.p.length/2)>=.6;});
+  }
+  selUI();if(WB.sel.length)toast(WB.sel.length+' selected · drag to move');
+  schedule();
+}
+function moveEnd(){
+  const m=WB.moveD;if(!m||Math.hypot(m.dx,m.dy)*WB.view.s<2)return;
+  const set=new Set(WB.sel),prev=WB.strokes.slice(),ns=[];
+  WB.strokes=WB.strokes.map(s=>{if(!set.has(s))return s;const t=shifted(s,m.dx,m.dy);ns.push(t);return t;});
+  WB.sel=ns;commit(prev);WB.dirty=true;
+}
+function deleteSel(){
+  if(!WB.sel.length)return;
+  const set=new Set(WB.sel);commit(WB.strokes.slice());
+  WB.strokes=WB.strokes.filter(s=>!set.has(s));WB.sel=[];selUI();saveBoard();schedule();
+}
+function recolorSel(c){
+  if(!WB.sel.length)return;
+  const set=new Set(WB.sel),ns=[];commit(WB.strokes.slice());
+  WB.strokes=WB.strokes.map(s=>{if(!set.has(s))return s;const t=Object.assign({},s,{c:c});ns.push(t);return t;});
+  WB.sel=ns;saveBoard();schedule();
+}
+wbSelDel.onclick=deleteSel;
+
+/* text box: click the board and type. Click a text again to edit it. Ctrl+Enter or Esc finishes. */
+function styleEdit(){
+  const E=WB.edit;if(!E)return;
+  const v=WB.view,ta=E.ta,box=textBox(E.x,E.y,ta.value||' ',E.fs);
+  ta.style.left=(E.x*v.s+v.x)+'px';ta.style.top=(E.y*v.s+v.y)+'px';
+  ta.style.fontSize=(E.fs*v.s)+'px';ta.style.lineHeight='1.3';
+  ta.style.width=(Math.max(box[2]-box[0],E.fs*3)*v.s+E.fs*v.s*.9)+'px';ta.style.height=((box[5]-box[1])*v.s)+'px';
+  ta.style.color=E.c==='ink'?getComputedStyle(root).getPropertyValue('--text').trim():E.c;
+}
+function openEdit(x,y,item){
+  finishEdit();
+  const ta=document.createElement('textarea');
+  ta.className='wb-ta';ta.rows=1;ta.spellcheck=false;ta.setAttribute('aria-label','Text box');ta.value=item?item.tx:'';
+  WB.edit={ta:ta,x:x,y:y,fs:item?item.fs:WB.w.text,c:item?item.c:WB.color,item:item||null};
+  wbBoard.appendChild(ta);styleEdit();
+  ta.addEventListener('input',styleEdit);
+  ta.addEventListener('blur',()=>{if(WB.edit&&WB.edit.ta===ta)finishEdit();});
+  ta.addEventListener('keydown',e=>{
+    e.stopPropagation();
+    if(e.key==='Escape'||(e.key==='Enter'&&(e.ctrlKey||e.metaKey))){e.preventDefault();finishEdit();}
+  });
+  setTimeout(()=>{ta.focus();},0);
+  schedule();
+}
+function finishEdit(){
+  const E=WB.edit;if(!E)return;
+  WB.edit=null;
+  const txt=E.ta.value.replace(/\s+$/,'');
+  E.ta.remove();
+  const prev=WB.strokes.slice();
+  if(E.item){
+    if(WB.strokes.indexOf(E.item)<0){schedule();return;}
+    if(txt===E.item.tx&&E.c===E.item.c){schedule();return;}
+    commit(prev);
+    if(!txt)WB.strokes=WB.strokes.filter(s=>s!==E.item);
+    else{const o=Object.assign({},E.item,{tx:txt,fs:E.fs,c:E.c,p:textBox(E.x,E.y,txt,E.fs)});WB.strokes=WB.strokes.map(s=>s===E.item?o:s);}
+  }else{
+    if(!txt){schedule();return;}
+    commit(prev);
+    WB.strokes=WB.strokes.concat([{c:E.c,w:1,tx:txt,fs:E.fs,p:textBox(E.x,E.y,txt,E.fs)}]);
+  }
+  saveBoard();schedule();
+}
+
 function startGesture(){
   const [a,b]=[...WB.ptrs.values()];
-  clearTimeout(WB.timer);WB.cur=null;WB.mode=null;WB.pan=null;wbBoard.classList.remove('grabbing');
+  clearTimeout(WB.timer);WB.cur=null;WB.mode=null;WB.pan=null;WB.lassoPath=null;WB.moveD=null;wbBoard.classList.remove('grabbing');
   WB.gest={d:Math.hypot(a.x-b.x,a.y-b.y)||1,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,s:WB.view.s,x:WB.view.x,y:WB.view.y};
 }
 function moveGesture(){
@@ -16944,6 +17122,17 @@ cv.addEventListener('pointerdown',e=>{
     WB.snapped=false;WB.shape=null;armHold(sx,sy);
   }
   else if(WB.mode==='eraser'){WB.prev=WB.strokes.slice();WB.changed=false;erase(sx,sy);}
+  else if(WB.mode==='lasso'){
+    const [x,y]=toWorld(sx,sy);
+    if(WB.sel.length&&inSelBox(x,y)){WB.mode='lmove';WB.moveStart={x:x,y:y};WB.moveD={dx:0,dy:0};}
+    else{WB.sel=[];selUI();WB.lassoPath=[[sx,sy]];}
+  }
+  else if(WB.mode==='text'){
+    const [x,y]=toWorld(sx,sy);let item=null;
+    for(let i=WB.strokes.length-1;i>=0&&!item;i--){const s=WB.strokes[i];if(s.tx!==undefined&&hit(s,x,y,0))item=s;}
+    openEdit(item?item.p[0]:x,item?item.p[1]:y,item);
+    WB.mode=null;
+  }
   else if(WB.mode==='laser')WB.laser.push({x:sx,y:sy,t:performance.now()});
   WB.hover={x:sx,y:sy};schedule();
 });
@@ -16962,7 +17151,8 @@ cv.addEventListener('pointermove',e=>{
       }
       else if(WB.shape){
         const S=WB.shape,[x,y]=toWorld(sx,sy);
-        if(Math.hypot(x-S.cx,y-S.cy)*WB.view.s>14){
+        if(S.line)lineAdjust(S,x,y);
+        else if(Math.hypot(x-S.cx,y-S.cy)*WB.view.s>14){
           const a=Math.atan2(y-S.cy,x-S.cx);
           if(S.a0===null)S.a0=a;
           else{
@@ -16973,6 +17163,8 @@ cv.addEventListener('pointermove',e=>{
         }
       }
     }
+    else if(WB.mode==='lasso'&&WB.lassoPath){const q=WB.lassoPath[WB.lassoPath.length-1];if(Math.hypot(sx-q[0],sy-q[1])>2.5)WB.lassoPath.push([sx,sy]);}
+    else if(WB.mode==='lmove'){const [x,y]=toWorld(sx,sy);WB.moveD={dx:x-WB.moveStart.x,dy:y-WB.moveStart.y};}
     else if(WB.mode==='eraser')erase(sx,sy);
     else if(WB.mode==='laser')WB.laser.push({x:sx,y:sy,t:performance.now()});
   }
@@ -16984,6 +17176,8 @@ function pointerEnd(e){
   clearTimeout(WB.timer);
   if((WB.mode==='pen'||WB.mode==='hl')&&WB.cur){if(e.type==='pointerup'){commit(WB.strokes.slice());WB.strokes.push(WB.cur);WB.dirty=true;}WB.cur=null;}
   else if(WB.mode==='eraser'&&WB.changed){commit(WB.prev);WB.changed=false;}
+  else if(WB.mode==='lasso'&&WB.lassoPath){if(e.type==='pointerup')lassoEnd();WB.lassoPath=null;}
+  else if(WB.mode==='lmove'){if(e.type==='pointerup')moveEnd();WB.moveD=null;}
   WB.mode=null;WB.pan=null;wbBoard.classList.remove('grabbing');
   if(WB.dirty)saveBoard();
   if(e.pointerType!=='mouse')WB.hover=null;
@@ -16998,10 +17192,11 @@ cv.addEventListener('wheel',e=>{
   else{WB.view.x-=e.deltaX;WB.view.y-=e.deltaY;viewChanged();}
 },{passive:false});
 document.addEventListener('keydown',e=>{
-  if(!wb.classList.contains('open')||e.altKey||e.target.tagName==='INPUT')return;
+  if(!wb.classList.contains('open')||e.altKey||e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
   if(e.key.toLowerCase()==='z'&&(e.ctrlKey||e.metaKey)){e.preventDefault();undo();return;}
   if(e.ctrlKey||e.metaKey)return;
-  const t={p:'pen',h:'hl',e:'eraser',l:'laser',m:'move'}[e.key.toLowerCase()];
+  if((e.key==='Delete'||e.key==='Backspace')&&WB.sel.length){e.preventDefault();deleteSel();return;}
+  const t={p:'pen',h:'hl',e:'eraser',l:'laser',m:'move',s:'lasso',t:'text'}[e.key.toLowerCase()];
   if(t)setTool(t);
   else if(e.key.toLowerCase()==='f')setFull(!wb.classList.contains('full'));
   else if(e.key==='+'||e.key==='=')zoomCentre(1.25);
@@ -17177,6 +17372,7 @@ document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
   if(!binMenu.hidden){setBin(false);binBtn.focus();return;}
   if(!wb.classList.contains('open'))return;
+  if(WB.sel.length){WB.sel=[];selUI();schedule();return;}
   if(wb.classList.contains('full'))setFull(false);else setWb(false);
 });
 new MutationObserver(syncWb).observe(app,{childList:true});
